@@ -70,4 +70,5 @@ def english_grades():
         browser.quit()
 
 
-english_grades()
+if __name__ == '__main__':
+    english_grades()
