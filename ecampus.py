@@ -21,7 +21,6 @@ def _parse_grade_table(browser: WebDriver, table_num: int) -> Tuple[str, list]:
     )
     discipline_name = discipline.text
     discipline.click()
-    browser.implicitly_wait(5)
     rows = browser.find_elements(By.CSS_SELECTOR, '#cMonitoringRow tbody tr')
     return discipline_name, [row.text for row in rows]
 
@@ -39,7 +38,6 @@ def _campus_authentication(browser: WebDriver) -> None:
     browser.find_element(
         By.XPATH,
         '//*[@id="root"]/div/div/div/section/div[1]/div[2]/div/div/div/div/form/fieldset/div[3]/input').click()
-    browser.implicitly_wait(5)
 
 
 def _save_or_using_cookie_to_auth(browser: WebDriver) -> None:
@@ -62,7 +60,6 @@ def _path_to_the_grades_tables(browser: WebDriver) -> None:
     browser.find_element(
         By.XPATH,
         '//*[@id="root"]/div/div/div/div/div/div[1]/div[1]/div/div/p[3]/button').click()
-    browser.implicitly_wait(5)
     browser.find_element(By.LINK_TEXT, 'Поточний контроль').click()
 
 
@@ -70,6 +67,7 @@ def show_student_grades() -> None:
     """Parses KPI Campus site to collect all student grades"""
 
     browser = webdriver.Chrome(options=options_configuration())
+    browser.implicitly_wait(5)
     try:
         browser.get("https://ecampus.kpi.ua/login")
 
@@ -85,7 +83,7 @@ def show_student_grades() -> None:
             pprint(grades_table[1])
             # return back to the all tables
             browser.find_element(By.LINK_TEXT, 'Поточний контроль').click()
-            browser.implicitly_wait(5)
+
     except Exception as ex:
         print(ex)
     finally:
