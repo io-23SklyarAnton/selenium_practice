@@ -1,6 +1,7 @@
 import time
 from pprint import pprint
 from typing import Tuple
+import pickle
 
 from selenium import webdriver
 import os
@@ -39,6 +40,22 @@ def _campus_authentication(browser: webdriver) -> None:
     time.sleep(2)
 
 
+def _save_or_using_cookie_to_auth(browser: webdriver) -> None:
+    """if cookie file already exists - auth via cookies,
+       if not - use env variables to login and then save the cookies file"""
+    cookies_path = f"cookies\\{os.getenv('LOGIN')}"
+
+    if os.path.exists(cookies_path):
+        with open(cookies_path, "rb") as f:
+            for cookie in pickle.load(f):
+                browser.add_cookie(cookie)
+        browser.get('https://ecampus.kpi.ua/home')
+    else:
+        _campus_authentication(browser)
+        with open(cookies_path, "wb") as f:
+            pickle.dump(browser.get_cookies(), f)
+
+
 def _path_to_the_grades_tables(browser: webdriver) -> None:
     browser.find_element(
         By.XPATH,
@@ -51,7 +68,9 @@ def english_grades():
     browser = webdriver.Chrome()
     try:
         browser.get("https://ecampus.kpi.ua/login")
-        _campus_authentication(browser)
+
+        # authentication
+        _save_or_using_cookie_to_auth(browser)
 
         # path to the grades tables
         _path_to_the_grades_tables(browser)
