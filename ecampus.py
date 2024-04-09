@@ -1,4 +1,3 @@
-import time
 from pprint import pprint
 from typing import Tuple
 import pickle
@@ -6,12 +5,15 @@ import pickle
 from selenium import webdriver
 import os
 from dotenv import load_dotenv
+from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
+
+from ecampus_config import options_configuration
 
 load_dotenv()
 
 
-def _parse_grade_table(browser: webdriver, table_num: int) -> Tuple[str, list]:
+def _parse_grade_table(browser: WebDriver, table_num: int) -> Tuple[str, list]:
     """return a discipline name and a list of the table rows with grades of this discipline"""
     discipline = browser.find_element(
         By.XPATH,
@@ -19,12 +21,12 @@ def _parse_grade_table(browser: webdriver, table_num: int) -> Tuple[str, list]:
     )
     discipline_name = discipline.text
     discipline.click()
-    time.sleep(3)
+    browser.implicitly_wait(5)
     rows = browser.find_elements(By.CSS_SELECTOR, '#cMonitoringRow tbody tr')
     return discipline_name, [row.text for row in rows]
 
 
-def _campus_authentication(browser: webdriver) -> None:
+def _campus_authentication(browser: WebDriver) -> None:
     # authentication
     browser.find_element(
         By.XPATH,
@@ -37,10 +39,10 @@ def _campus_authentication(browser: webdriver) -> None:
     browser.find_element(
         By.XPATH,
         '//*[@id="root"]/div/div/div/section/div[1]/div[2]/div/div/div/div/form/fieldset/div[3]/input').click()
-    time.sleep(2)
+    browser.implicitly_wait(5)
 
 
-def _save_or_using_cookie_to_auth(browser: webdriver) -> None:
+def _save_or_using_cookie_to_auth(browser: WebDriver) -> None:
     """if cookie file already exists - auth via cookies,
        if not - use env variables to login and then save the cookies file"""
     cookies_path = f"cookies\\{os.getenv('LOGIN')}"
@@ -56,16 +58,18 @@ def _save_or_using_cookie_to_auth(browser: webdriver) -> None:
             pickle.dump(browser.get_cookies(), f)
 
 
-def _path_to_the_grades_tables(browser: webdriver) -> None:
+def _path_to_the_grades_tables(browser: WebDriver) -> None:
     browser.find_element(
         By.XPATH,
         '//*[@id="root"]/div/div/div/div/div/div[1]/div[1]/div/div/p[3]/button').click()
-    time.sleep(3)
+    browser.implicitly_wait(5)
     browser.find_element(By.LINK_TEXT, 'Поточний контроль').click()
 
 
-def english_grades():
-    browser = webdriver.Chrome()
+def show_student_grades() -> None:
+    """Parses KPI Campus site to collect all student grades"""
+
+    browser = webdriver.Chrome(options=options_configuration())
     try:
         browser.get("https://ecampus.kpi.ua/login")
 
@@ -81,7 +85,7 @@ def english_grades():
             pprint(grades_table[1])
             # return back to the all tables
             browser.find_element(By.LINK_TEXT, 'Поточний контроль').click()
-            time.sleep(2)
+            browser.implicitly_wait(5)
     except Exception as ex:
         print(ex)
     finally:
@@ -90,4 +94,4 @@ def english_grades():
 
 
 if __name__ == '__main__':
-    english_grades()
+    show_student_grades()
