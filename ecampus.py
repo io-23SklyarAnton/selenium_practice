@@ -1,17 +1,34 @@
 import time
+from copy import copy
 from pprint import pprint
-from typing import Tuple
 import pickle
+import threading
 
 from selenium import webdriver
 import os
 from dotenv import load_dotenv
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webelement import WebElement
 
 from ecampus_config import options_configuration
 
-load_dotenv()
+
+def _open_grades_table(browser: WebDriver, discipline: WebElement):
+    browser.execute_script("window.open(arguments[0], '_blank');", discipline.get_attribute("href"))
+
+
+def _parse_grades_table(browser: WebDriver, discipline: WebElement) -> None:
+    discipline_name = discipline.text
+
+    browser.switch_to.window(browser.window_handles[1])
+    rows = browser.find_elements(By.CSS_SELECTOR, '#cMonitoringRow tbody tr')
+
+    rows_text = [[row.text for row in rows]]
+    print(discipline_name)
+    pprint(rows_text)
+    browser.close()
+    browser.switch_to.window(browser.window_handles[0])
 
 
 def _show_grades_tables(browser: WebDriver) -> None:
@@ -20,17 +37,11 @@ def _show_grades_tables(browser: WebDriver) -> None:
         By.XPATH,
         f'//div[@class="studySheetBox"]/table/tbody/tr/td[1]/a'
     )
-    for discipline in disciplines:
-        discipline_name = discipline.text
-        browser.execute_script("window.open(arguments[0], '_blank');", discipline.get_attribute("href"))
-        browser.switch_to.window(browser.window_handles[-1])
-
-        rows = browser.find_elements(By.CSS_SELECTOR, '#cMonitoringRow tbody tr')
-        rows_text = [[row.text for row in rows]]
-        print(discipline_name)
-        pprint(rows_text)
-        browser.close()
-        browser.switch_to.window(browser.window_handles[0])
+    threads = [threading.Thread(target=_open_grades_table, args=(browser, discipline)) for discipline in
+               disciplines]
+    [thread.start() for thread in threads]
+    [thread.join() for thread in threads]
+    [_parse_grades_table(browser, discipline) for discipline in disciplines]
 
 
 def _campus_authentication(browser: WebDriver) -> None:
@@ -88,4 +99,6 @@ def show_student_grades() -> None:
 
 
 if __name__ == '__main__':
+    load_dotenv()
+
     show_student_grades()
